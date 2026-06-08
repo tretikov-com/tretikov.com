@@ -1,0 +1,511 @@
+/* tretikov.fam — base styles. Single-canvas layout. */
+
+:root {
+  --bg: #060606;
+  --ink: #e8e8e8;
+  --ink-dim: #7a7a7a;
+  --ink-faint: #2f2f2f;
+  --accent: #ff6a00;
+  --accent-2: #ff2d2d;
+  --accent-3: #ffffff;
+  --grid: #1a1a1a;
+  --hud-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --hud-sans: "Space Grotesk", "Inter Tight", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--hud-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  overflow: hidden;
+}
+
+.mono {
+  font-family: var(--hud-mono);
+  font-feature-settings: "tnum", "zero";
+  letter-spacing: 0.01em;
+}
+
+/* ---------- Site frame ---------- */
+
+.site {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.canvas-bed {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.canvas-bed canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  cursor: grab;
+}
+.canvas-bed canvas:active { cursor: grabbing; }
+
+/* Background grid (low-cost, no mix-blend) */
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Optional scanlines (single layer, no mix-blend) */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.018) 0 1px,
+    transparent 1px 4px
+  );
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Corner crosshairs */
+.corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  z-index: 6;
+  color: var(--accent);
+}
+.corner::before, .corner::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+.corner.tl { top: 32px; left: 24px; }
+.corner.tr { top: 32px; right: 24px; }
+.corner.bl { bottom: 32px; left: 24px; }
+.corner.br { bottom: 32px; right: 24px; }
+.corner.tl::before { top: 0; left: 0; width: 10px; height: 1px; }
+.corner.tl::after  { top: 0; left: 0; width: 1px; height: 10px; }
+.corner.tr::before { top: 0; right: 0; width: 10px; height: 1px; }
+.corner.tr::after  { top: 0; right: 0; width: 1px; height: 10px; }
+.corner.bl::before { bottom: 0; left: 0; width: 10px; height: 1px; }
+.corner.bl::after  { bottom: 0; left: 0; width: 1px; height: 10px; }
+.corner.br::before { bottom: 0; right: 0; width: 10px; height: 1px; }
+.corner.br::after  { bottom: 0; right: 0; width: 1px; height: 10px; }
+
+/* ---------- HUD chrome ---------- */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--hud-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  z-index: 8;
+}
+.hud .row {
+  position: absolute;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 0 24px;
+  height: 32px;
+  width: 100%;
+}
+.hud .row.top { top: 0; border-bottom: 1px solid var(--ink-faint); }
+.hud .row.bot { bottom: 0; border-top: 1px solid var(--ink-faint); }
+.hud .right { margin-left: auto; display: flex; gap: 24px; }
+.hud .accent { color: var(--accent); }
+
+/* Boot strip */
+.boot-strip {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  font-family: var(--hud-mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--ink-faint);
+  pointer-events: none;
+}
+.boot-strip .pulse {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+/* Side rails */
+.rail {
+  position: absolute;
+  top: 60px;
+  bottom: 60px;
+  width: 22px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 16px 0;
+  z-index: 7;
+  font-family: var(--hud-mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+}
+.rail.left { left: 0; align-items: flex-end; padding-right: 6px; }
+.rail.right { right: 0; align-items: flex-start; padding-left: 6px; }
+.rail span::after, .rail.right span::before { content: ""; display: inline-block; width: 6px; height: 1px; background: var(--ink-faint); vertical-align: middle; margin: 0 4px; }
+.rail.right span::after { display: none; }
+.rail.left span::before { display: none; }
+
+/* ---------- Identifier ---------- */
+
+.identifier {
+  position: absolute;
+  top: 64px;
+  left: 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 7;
+}
+.identifier .glyph {
+  font-family: var(--hud-mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.identifier .title {
+  font-family: var(--hud-sans);
+  font-weight: 600;
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.identifier .sub {
+  font-family: var(--hud-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---------- State readout (top right of stage) ---------- */
+
+.state-readout {
+  position: absolute;
+  top: 64px;
+  right: 44px;
+  font-family: var(--hud-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: right;
+  z-index: 7;
+  pointer-events: none;
+  line-height: 1.6;
+}
+.state-readout .k { color: var(--ink-faint); }
+.state-readout .v { color: var(--accent); }
+.state-readout .big {
+  font-family: var(--hud-sans);
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-transform: none;
+  margin-top: 2px;
+}
+
+/* ---------- Member cards (bottom row) ---------- */
+
+.cards {
+  position: absolute;
+  left: 44px;
+  right: 44px;
+  bottom: 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  z-index: 9;
+}
+.card {
+  position: relative;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--ink-faint);
+  background: rgba(8, 8, 8, 0.78);
+  cursor: crosshair;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.card:hover, .card[data-active="true"] {
+  border-color: var(--accent);
+  background: rgba(16, 12, 8, 0.62);
+}
+.card .row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--hud-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.card .row .id { color: var(--accent); }
+.card .role {
+  font-family: var(--hud-mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.card .name {
+  font-family: var(--hud-sans);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+.card .lede {
+  font-family: var(--hud-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  margin: 0;
+  max-width: 38ch;
+}
+.card .hint {
+  position: absolute;
+  bottom: 14px;
+  right: 18px;
+  font-family: var(--hud-mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.card[data-active="true"] .hint { color: var(--accent); }
+
+/* Bracket marks at card corners */
+.card::before, .card::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--accent);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.card::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.card::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+.card:hover::before, .card:hover::after,
+.card[data-active="true"]::before, .card[data-active="true"]::after {
+  opacity: 1;
+}
+
+/* ---------- Bottom nav ---------- */
+
+.nav {
+  position: absolute;
+  left: 44px;
+  right: 44px;
+  bottom: 44px;
+  display: flex;
+  gap: 0;
+  border-top: 1px solid var(--ink-faint);
+  padding-top: 10px;
+  z-index: 9;
+}
+.nav .item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 24px;
+  cursor: pointer;
+  animation: navItemIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes navItemIn {
+  from { opacity: 0; transform: translateY(6px); filter: blur(0.5px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav .item { animation: none; }
+}
+.nav .item .k {
+  font-family: var(--hud-mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  letter-spacing: 0.15em;
+}
+.nav .item .v {
+  font-family: var(--hud-mono);
+  font-size: 11px;
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.nav .item:hover .v { color: var(--accent); }
+
+/* ---------- Center label (above cards) ---------- */
+
+.stage-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 240px;
+  font-family: var(--hud-mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  pointer-events: none;
+  z-index: 7;
+}
+.stage-label .v {
+  display: block;
+  font-family: var(--hud-sans);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink-dim);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ---------- Minimal HUD variant ---------- */
+
+/* Strip all extraneous chrome + text. Keep: wordmark, highlights, footer menu. */
+.site[data-hud="minimal"] .scanlines,
+.site[data-hud="minimal"] .boot-strip,
+.site[data-hud="minimal"] .rail,
+.site[data-hud="minimal"] .grid-bg,
+.site[data-hud="minimal"] .hud,
+.site[data-hud="minimal"] .stage-label,
+.site[data-hud="minimal"] .state-readout,
+.site[data-hud="minimal"] .corner,
+.site[data-hud="minimal"] .identifier .glyph,
+.site[data-hud="minimal"] .identifier .sub,
+.site[data-hud="minimal"] .tooltip { display: none; }
+
+/* Wordmark only, quietly placed */
+.site[data-hud="minimal"] .identifier { top: 40px; left: 44px; }
+.site[data-hud="minimal"] .identifier .title { font-size: 20px; font-weight: 500; }
+
+/* Highlights: a single centered cluster sitting below the graphic, never over it */
+.site[data-hud="minimal"] .cards {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  bottom: 104px;
+  width: auto;
+  max-width: min(940px, 92vw);
+  display: flex;
+  gap: 56px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Each highlight: compact bordered panel, centered text. Translucent so the
+   graphic still reads through it — readable without hiding the form. */
+.site[data-hud="minimal"] .card {
+  flex: 0 1 248px;
+  border: 1px solid var(--ink-faint);
+  background: color-mix(in oklab, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  padding: 16px 18px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+.site[data-hud="minimal"] .card .row,
+.site[data-hud="minimal"] .card .hint { display: none; }
+.site[data-hud="minimal"] .card::before,
+.site[data-hud="minimal"] .card::after { display: none; }
+
+.site[data-hud="minimal"] .card .name {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  transition: color 180ms ease;
+}
+.site[data-hud="minimal"] .card .role {
+  margin: 0 0 8px;
+  font-size: 9px;
+  color: var(--ink-dim);
+}
+.site[data-hud="minimal"] .card .lede {
+  margin: 0 auto;
+  max-width: 32ch;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+/* Spotlight the active highlight */
+.site[data-hud="minimal"] .card:hover,
+.site[data-hud="minimal"] .card[data-active="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+}
+.site[data-hud="minimal"] .card:hover .name,
+.site[data-hud="minimal"] .card[data-active="true"] .name { color: var(--accent); }
+
+/* ---------- Tooltip ---------- */
+
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(8,8,8,0.92);
+  border: 1px solid var(--ink-faint);
+  padding: 8px 10px;
+  font-family: var(--hud-mono);
+  font-size: 10px;
+  color: var(--ink);
+  letter-spacing: 0.08em;
+  z-index: 100;
+  white-space: pre;
+  min-width: 160px;
+}
+.tooltip .k { color: var(--ink-faint); }
+.tooltip .a { color: var(--accent); }
