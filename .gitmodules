@@ -1,0 +1,3 @@
+[submodule "max"]
+	path = max
+	url = https://github.com/tretikov-com/max.tretikov.com.git
