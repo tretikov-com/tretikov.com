@@ -1,4 +1,4 @@
-/* Palettes — shared across the design canvas and tweaks panel. */
+/* Palettes — shared across the design canvas. */
 
 window.PALETTES = {
   nerv: {
