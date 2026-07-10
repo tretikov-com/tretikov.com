@@ -246,11 +246,11 @@ function Site({
       <div className="corner br" />
 
       {/* Identifier */}
-      <div className="identifier">
+      {/* <div className="identifier">
         <span className="glyph">// FAMILIA · INDEX 003</span>
         <h1 className="title">tretikov.com</h1>
         <span className="sub">three nodes · math → ai → bio</span>
-      </div>
+      </div> */}
 
       {/* State readout */}
       <div className="state-readout">

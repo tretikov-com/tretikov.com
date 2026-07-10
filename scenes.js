@@ -204,6 +204,10 @@
     const a = smoothstep(0, 1, w);        // phase A: icosa -> molecule
     const b = smoothstep(1, 2, w);        // phase B: molecule -> DNA
     S.wMol = a - smoothstep(1.55, 2, w);  // stays lit through the morph, fades only at the end
+    // Satellites are deliberately delayed on the icosa <-> molecule transition.
+    // On the return trip this makes the secondary graph peel away before the seed
+    // changes scale enough to compete with it.
+    S.wMolNodes = S.wMol * Math.pow(a, 2.5);
     S.wDna = b;
 
     // Seed icosahedron scales toward node size.
@@ -398,8 +402,8 @@
         const p = S.curMol[i];
         Lmol.meshes[i].position.set(p.x, p.y, p.z);
       }
-      Lmol.faceMat.uniforms.uOpacity.value = S.wMol;
-      Lmol.edgeMat.opacity = S.wMol * 0.9;
+      Lmol.faceMat.uniforms.uOpacity.value = S.wMolNodes;
+      Lmol.edgeMat.opacity = S.wMolNodes * 0.9;
       molColTmp.copy(molColLo).lerp(molColHi, smoothstep(1, 2, S.w));
       Lmol.faceMat.uniforms.uColor.value.copy(molColTmp);
       Lmol.edgeMat.color.copy(molColTmp);
@@ -583,7 +587,7 @@
         return (Math.round(r1+(r2-r1)*t)<<16) | (Math.round(g1+(g2-g1)*t)<<8) | Math.round(b1+(b2-b1)*t);
       };
       const molColor = lerpHex(S.palette.accent2, S.palette.accent, molMix);
-      drawNodes(S.curMol, S.wMol, molColor, null, 0, S.data.molSize);
+      drawNodes(S.curMol, S.wMolNodes, molColor, null, 0, S.data.molSize);
       drawNodes(S.curDna, S.wDna, S.palette.accent2, S.palette.accent, dnaCenter);
 
       ctx.globalAlpha = 1;
