@@ -4,3 +4,6 @@
 [submodule "alexei"]
 	path = alexei
 	url = https://github.com/tretikov-com/alexei.tretikov.com.git
+[submodule "lila"]
+	path = lila
+	url = https://github.com/tretikov-com/lila.tretikov.com.git
