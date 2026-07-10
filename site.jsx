@@ -2,10 +2,29 @@
 
 const { useEffect, useRef, useState, useMemo } = React;
 
+/* Single source of truth for resolving a sibling subsite by name:
+     prod → https://<name>.tretikov.com   (its own subdomain)
+     dev  → <origin>/<name>               (same host, served as a subpath, e.g. http://localhost:8000/max)
+   The dev/prod split is inferred from the host, so there is nothing to configure. */
+const subsite = (name) => {
+  const host = location.hostname;
+  const isLocal = host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "";
+  return isLocal
+    ? `${location.origin}/${name}`
+    : `${location.protocol}//${name}.${host.replace(/^www\./, "")}`;
+};
+
+/* A section within a subsite. "home" (or falsy) resolves to the subsite root;
+   anything else becomes a subpath — e.g. subsiteLink("max", "projects") →
+   prod https://max.tretikov.com/projects · dev http://localhost:8000/max/projects */
+const subsiteLink = (name, section) =>
+  !section || section === "home" ? `${subsite(name)}/` : `${subsite(name)}/${section}`;
+
 const MEMBERS = [
 {
   code: "01.AT",
   state: "icosa",
+  slug: "alexei",
   sceneTag: "MESH/ICO·12",
   role: "Professor at Siedlce University",
   name: "Alexei Tretikov",
@@ -16,6 +35,7 @@ const MEMBERS = [
 {
   code: "02.LT",
   state: "mol",
+  slug: "lila",
   sceneTag: "GRAPH/NETWORK",
   role: "Head of AI at NEA",
   name: "Lila Tretikov",
@@ -26,6 +46,7 @@ const MEMBERS = [
 {
   code: "03.MT",
   state: "dna",
+  slug: "max",
   sceneTag: "HELIX/DNA·22",
   role: "Bioengineering at UC Berkeley",
   name: "Max Tretikov",
@@ -148,10 +169,11 @@ function Site({
     "--grid": palette.css.grid
   }), [palette]);
 
-  const navItems = useMemo(() => {
-    const m = MEMBERS.find((x) => x.state === active);
-    return m ? m.menu : ["home", "profiles", "writing", "projects", "now"];
-  }, [active]);
+  const activeMember = useMemo(() => MEMBERS.find((x) => x.state === active) || null, [active]);
+  const navItems = useMemo(
+    () => activeMember ? activeMember.menu : ["home", "profiles", "writing", "projects", "now"],
+    [activeMember]
+  );
 
   const stateLabel = useMemo(() => {
     if (active === "icosa") return ["FORM·01", "icosahedron"];
@@ -244,35 +266,47 @@ function Site({
 
       {/* Member cards */}
       <div className="cards">
-        {MEMBERS.map((m, i) =>
-        <div
-          key={m.code}
-          className="card"
-          data-active={active === m.state}
-          onPointerEnter={(e) => handleEnter(m, e)}
-          onPointerMove={(e) => handleMove(m, e)}
-          onPointerLeave={handleLeave} style={{ width: "160px" }}>
-          
-            <div className="row">
-              <span><span className="id">N{String(i + 1).padStart(2, "0")}</span> · {m.code}</span>
-              <span>{m.sceneTag}</span>
-            </div>
-            <div className="role">{m.role}</div>
-            <h2 className="name">{m.name}</h2>
-            <p className="lede">{m.lede}</p>
-            <span className="hint">{active === m.state ? "● ENGAGED" : "○ HOVER·TO·FORM"}</span>
-          </div>
-        )}
+        {MEMBERS.map((m, i) => {
+          const href = m.slug ? subsiteLink(m.slug, "home") : null;
+          const Card = href ? "a" : "div";
+          return (
+            <Card
+              key={m.code}
+              className="card"
+              href={href || undefined}
+              data-active={active === m.state}
+              onPointerEnter={(e) => handleEnter(m, e)}
+              onPointerMove={(e) => handleMove(m, e)}
+              onPointerLeave={handleLeave} style={{ width: "160px" }}>
+              <div className="row">
+                <span><span className="id">N{String(i + 1).padStart(2, "0")}</span> · {m.code}</span>
+                <span>{m.sceneTag}</span>
+              </div>
+              <div className="role">{m.role}</div>
+              <h2 className="name">{m.name}</h2>
+              <p className="lede">{m.lede}</p>
+              <span className="hint">
+                {href && active === m.state ? "● ENTER·SITE →" :
+                 active === m.state ? "● ENGAGED" : "○ HOVER·TO·FORM"}
+              </span>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Bottom nav — switches with the active node */}
+      {/* Bottom nav — switches with the active node; items link into that
+          member's subsite (home → root, others → subpaths) when one is active */}
       <nav className="nav" key={active || "default"}>
-        {navItems.map((label, i) =>
-        <div className="item" key={label} style={{ animationDelay: i * 45 + "ms" }}>
-            <span className="k">{String(i + 1).padStart(2, "0")} /</span>
-            <span className="v">{label}</span>
-          </div>
-        )}
+        {navItems.map((label, i) => {
+          const href = activeMember && activeMember.slug ? subsiteLink(activeMember.slug, label) : null;
+          const Item = href ? "a" : "div";
+          return (
+            <Item className="item" key={label} href={href || undefined} style={{ animationDelay: i * 45 + "ms" }}>
+              <span className="k">{String(i + 1).padStart(2, "0")} /</span>
+              <span className="v">{label}</span>
+            </Item>
+          );
+        })}
       </nav>
 
       {scanlines && hud !== "minimal" && <div className="scanlines" />}

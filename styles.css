@@ -267,16 +267,21 @@ html, body, #root {
 }
 .card {
   position: relative;
+  display: block;
   padding: 16px 18px 18px;
   border: 1px solid var(--ink-faint);
   background: rgba(8, 8, 8, 0.78);
   cursor: crosshair;
+  color: inherit;
+  text-decoration: none;
   transition: border-color 160ms ease, background 160ms ease;
 }
 .card:hover, .card[data-active="true"] {
   border-color: var(--accent);
   background: rgba(16, 12, 8, 0.62);
 }
+/* a card that navigates to a subsite (rendered as <a href>) signals it's clickable */
+.card[href] { cursor: pointer; }
 .card .row {
   display: flex;
   justify-content: space-between;
@@ -362,6 +367,8 @@ html, body, #root {
   gap: 2px;
   padding-right: 24px;
   cursor: pointer;
+  color: inherit;
+  text-decoration: none;
   animation: navItemIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes navItemIn {

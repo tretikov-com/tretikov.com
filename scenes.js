@@ -214,12 +214,13 @@
     // Molecule: phase A expands it out of the seed; phase B morphs every node toward
     // its DNA anchor, so the graph reshapes into the helix's central run rather than
     // shrinking to a point.
+    const molShrink = 1 - 0.15 * b;                     // graph tightens slightly as it conforms
     for (let i = 0; i < S.curMol.length; i++) {
       const m = S.data.molPos[i], anc = S.data.molAnchorPos[i], c = S.curMol[i];
       const mx = m.x * a, my = m.y * a, mz = m.z * a;   // expanded molecule position
-      c.x = mx + (anc.x - mx) * b;
-      c.y = my + (anc.y - my) * b;
-      c.z = mz + (anc.z - mz) * b;
+      c.x = (mx + (anc.x - mx) * b) * molShrink;
+      c.y = (my + (anc.y - my) * b) * molShrink;
+      c.z = (mz + (anc.z - mz) * b) * molShrink;
     }
     // DNA: full helix positions throughout; appearance is driven by opacity (wDna).
     for (let i = 0; i < S.curDna.length; i++) {
@@ -315,12 +316,18 @@
     }
     // Molecule-inspired network — uniform accent nodes with mild size variation
     // (hubs read a touch larger). The central hub is the persistent seed (hidden).
-    const Lmol = buildLayer(S.data.molPos.length, S.palette.accent);
+    const Lmol = buildLayer(S.data.molPos.length, S.palette.accent2);
     for (let i = 0; i < Lmol.meshes.length; i++) {
       Lmol.meshes[i].scale.setScalar((S.data.molSize[i] || 0.13) / 0.13);
     }
-    const LdnaA = buildLayer(S.data.dnaPos.length / 2, S.palette.accent);
-    const LdnaB = buildLayer(S.data.dnaPos.length / 2, S.palette.accent2);
+    // Origin sits on the odd (B) strand: its strand is primary, the other secondary.
+    const LdnaA = buildLayer(S.data.dnaPos.length / 2, S.palette.accent2);
+    const LdnaB = buildLayer(S.data.dnaPos.length / 2, S.palette.accent);
+
+    // Molecule node colour sweeps secondary -> primary as the graph conforms.
+    const molColLo = new THREE.Color(S.palette.accent2);  // start (secondary)
+    const molColHi = new THREE.Color(S.palette.accent);   // end (primary)
+    const molColTmp = new THREE.Color();
 
     // The network's central hub (and the DNA's central node) are the seed — hide them.
     Lmol.meshes[0].visible = false;
@@ -393,6 +400,9 @@
       }
       Lmol.faceMat.uniforms.uOpacity.value = S.wMol;
       Lmol.edgeMat.opacity = S.wMol * 0.9;
+      molColTmp.copy(molColLo).lerp(molColHi, smoothstep(1, 2, S.w));
+      Lmol.faceMat.uniforms.uColor.value.copy(molColTmp);
+      Lmol.edgeMat.color.copy(molColTmp);
 
       for (let i = 0; i < LdnaA.meshes.length; i++) {
         const p = S.curDna[i * 2];
@@ -438,9 +448,9 @@
     function setPalette(p) {
       S.palette = { ...S.palette, ...p };
       const u = (mat, key) => mat.uniforms.uColor.value.setHex(p[key]);
-      u(Lmol.faceMat,   "accent");  Lmol.edgeMat.color.setHex(p.accent);
-      u(LdnaA.faceMat,  "accent");  LdnaA.edgeMat.color.setHex(p.accent);
-      u(LdnaB.faceMat,  "accent2"); LdnaB.edgeMat.color.setHex(p.accent2);
+      molColLo.setHex(p.accent2); molColHi.setHex(p.accent);  // render() lerps between these
+      u(LdnaA.faceMat,  "accent2"); LdnaA.edgeMat.color.setHex(p.accent2);
+      u(LdnaB.faceMat,  "accent");  LdnaB.edgeMat.color.setHex(p.accent);
       matIcoEdge.color.setHex(p.accent);
       matMolBond.color.setHex(p.accent);
       matMolDot.color.setHex(p.accent3);
@@ -565,8 +575,16 @@
       drawEdges(S.data.dnaRungs,    S.curDna,   S.wDna * 0.6,   S.palette.accent3, true);
 
       const dnaCenter = Math.floor(S.curDna.length / 2);
-      drawNodes(S.curMol, S.wMol, S.palette.accent, null, 0, S.data.molSize);
-      drawNodes(S.curDna, S.wDna, S.palette.accent, S.palette.accent2, dnaCenter);
+      // Molecule nodes sweep secondary -> primary as the graph conforms (phase B).
+      const molMix = smoothstep(1, 2, S.w);
+      const lerpHex = (c1, c2, t) => {
+        const r1 = (c1>>16)&255, g1 = (c1>>8)&255, b1 = c1&255;
+        const r2 = (c2>>16)&255, g2 = (c2>>8)&255, b2 = c2&255;
+        return (Math.round(r1+(r2-r1)*t)<<16) | (Math.round(g1+(g2-g1)*t)<<8) | Math.round(b1+(b2-b1)*t);
+      };
+      const molColor = lerpHex(S.palette.accent2, S.palette.accent, molMix);
+      drawNodes(S.curMol, S.wMol, molColor, null, 0, S.data.molSize);
+      drawNodes(S.curDna, S.wDna, S.palette.accent2, S.palette.accent, dnaCenter);
 
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
