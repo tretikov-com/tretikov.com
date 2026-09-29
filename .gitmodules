@@ -1,9 +1,9 @@
 [submodule "max"]
 	path = max
-	url = https://github.com/tretikov-com/max.tretikov.com.git
+	url = git@github.com:tretikov-com/max.tretikov.com.git
 [submodule "alexei"]
 	path = alexei
-	url = https://github.com/tretikov-com/alexei.tretikov.com.git
+	url = git@github.com:tretikov-com/alexei.tretikov.com.git
 [submodule "lila"]
 	path = lila
-	url = https://github.com/tretikov-com/lila.tretikov.com.git
+	url = git@github.com:tretikov-com/lila.tretikov.com.git
